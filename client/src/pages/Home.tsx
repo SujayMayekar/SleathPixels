@@ -28,8 +28,8 @@ function Hero() {
         </h1>
         
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-          Hide secrets in plain sight. Advanced image steganography that runs entirely in your browser.
-          No server uploads. No data tracking. Pure privacy.
+          Hide secrets in plain sight. Deep-layer pixel manipulation with cryptographic precision.
+          No server footprints. No traces. Pure encryption.
         </p>
       </motion.div>
 
@@ -148,13 +148,9 @@ function EncodeSection() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <CyberButton variant="secondary" onClick={downloadImage}>
+                  <CyberButton variant="secondary" onClick={downloadImage} className="w-full">
                     <Download className="mr-2 h-4 w-4" />
                     Download PNG
-                  </CyberButton>
-                  <CyberButton variant="outline" onClick={copyDataUri}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copy Data URI
                   </CyberButton>
                 </div>
               </motion.div>
@@ -239,11 +235,11 @@ function DecodeSection() {
 
             {isProcessing ? (
               <div className="flex items-center justify-center py-12 space-x-3 text-primary/80 font-mono">
-                <span className="animate-pulse">DECRYPTING PIXELS...</span>
+                <span className="animate-pulse">DECRYPTING_PIXELS...</span>
               </div>
             ) : (
               <div className="relative group">
-                <div className="bg-black/60 rounded-xl p-6 font-mono text-lg leading-relaxed text-primary-foreground min-h-[100px] whitespace-pre-wrap border border-white/5">
+                <div className="bg-black/60 rounded-xl p-6 font-mono text-lg leading-relaxed text-primary shadow-[0_0_20px_-5px_rgba(124,58,237,0.3)] min-h-[100px] whitespace-pre-wrap border border-primary/20">
                   {decodedMessage}
                 </div>
                 <button 

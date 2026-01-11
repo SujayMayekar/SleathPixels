@@ -5,35 +5,35 @@
 @tailwind utilities;
 
 :root {
-  /* Cyber/Hacker Theme */
+  /* Cryptographic/Cyber Theme */
   --font-display: 'Space Grotesk', sans-serif;
   --font-body: 'Outfit', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Dark mode default base */
-  --background: 240 10% 4%;        /* Very dark grey/black */
-  --foreground: 0 0% 98%;
+  /* Deep Navy/Violet Base */
+  --background: 230 45% 4%;        /* Deep Navy */
+  --foreground: 210 40% 98%;
 
-  /* Primary - Neon Green/Cyan */
-  --primary: 142 70% 49%;          /* Matrix Green */
-  --primary-foreground: 240 10% 4%;
+  /* Primary - Violet */
+  --primary: 262 83% 58%;          /* Deep Violet */
+  --primary-foreground: 210 40% 98%;
 
-  /* Secondary - Deep Purple */
-  --secondary: 262 80% 50%;
-  --secondary-foreground: 0 0% 98%;
+  /* Secondary - Neon Cyan/Blue */
+  --secondary: 199 89% 48%;
+  --secondary-foreground: 210 40% 98%;
 
   /* Accents */
-  --muted: 240 6% 10%;
-  --muted-foreground: 240 5% 65%;
-  --accent: 262 80% 50%;
-  --accent-foreground: 0 0% 98%;
+  --muted: 230 40% 10%;
+  --muted-foreground: 215 20% 65%;
+  --accent: 262 83% 58%;
+  --accent-foreground: 210 40% 98%;
 
-  --destructive: 0 62% 30%;
-  --destructive-foreground: 0 0% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
 
-  --border: 240 6% 15%;
-  --input: 240 6% 15%;
-  --ring: 142 70% 49%;
+  --border: 230 45% 15%;
+  --input: 230 45% 15%;
+  --ring: 262 83% 58%;
 
   --radius: 0.75rem;
 }

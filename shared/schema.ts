@@ -1,18 +1,21 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+// We don't strictly need a database for a client-side app, 
+// but we'll set up a basic schema structure to follow the architecture
+// and allow for future enhancements (e.g. saving history).
+
+export const steganographyLogs = pgTable("steganography_logs", {
+  id: serial("id").primaryKey(),
+  action: text("action").notNull(), // 'encode' or 'decode'
+  timestamp: text("timestamp").notNull(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const insertLogSchema = createInsertSchema(steganographyLogs).pick({
+  action: true,
+  timestamp: true,
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+export type InsertLog = z.infer<typeof insertLogSchema>;
+export type Log = typeof steganographyLogs.$inferSelect;

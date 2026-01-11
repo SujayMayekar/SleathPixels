@@ -6,9 +6,9 @@
 
 :root {
   /* Cryptographic/Cyber Theme */
-  --font-display: 'Oxanium', sans-serif;
-  --font-body: 'Share Tech Mono', monospace;
-  --font-mono: 'Fira Code', monospace;
+  --font-display: 'Orbitron', sans-serif;
+  --font-body: 'VT323', monospace;
+  --font-mono: 'Silkscreen', monospace;
 
   /* Deep Navy/Violet Base */
   --background: 230 45% 4%;        /* Deep Navy */

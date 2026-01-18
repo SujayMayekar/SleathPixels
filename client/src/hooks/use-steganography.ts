@@ -1,12 +1,36 @@
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
+import CryptoJS from "crypto-js";
 
 // LSB Steganography Constants
 const DELIMITER = "|||EOF|||";
 
+export interface SteganoHistoryItem {
+  id: string;
+  timestamp: number;
+  action: 'encode' | 'decode';
+  filename: string;
+}
+
 export function useSteganography() {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [history, setHistory] = useState<SteganoHistoryItem[]>(() => {
+    const saved = localStorage.getItem('stegano_history');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const addToHistory = (action: 'encode' | 'decode', filename: string) => {
+    const newItem: SteganoHistoryItem = {
+      id: Math.random().toString(36).substr(2, 9),
+      timestamp: Date.now(),
+      action,
+      filename
+    };
+    const updated = [newItem, ...history].slice(0, 10);
+    setHistory(updated);
+    localStorage.setItem('stegano_history', JSON.stringify(updated));
+  };
 
   // Helper: Convert string to binary
   const textToBinary = (text: string): string => {
@@ -21,8 +45,13 @@ export function useSteganography() {
     return bytes.map(byte => String.fromCharCode(parseInt(byte, 2))).join('');
   };
 
+  const calculateCapacity = (imgWidth: number, imgHeight: number): number => {
+    // 3 bits per pixel (RGB LSBs)
+    return Math.floor((imgWidth * imgHeight * 3) / 8);
+  };
+
   // ENCODE: Hide text in image
-  const encodeMessage = useCallback(async (file: File, message: string): Promise<string | null> => {
+  const encodeMessage = useCallback(async (file: File, message: string, password?: string): Promise<string | null> => {
     setIsProcessing(true);
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -46,18 +75,21 @@ export function useSteganography() {
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           const data = imageData.data;
           
-          // Prepare message with delimiter
-          const fullMessage = message + DELIMITER;
+          // Encrypt if password provided
+          let processedMessage = message;
+          if (password) {
+            processedMessage = "ENC:" + CryptoJS.AES.encrypt(message, password).toString();
+          }
+          
+          const fullMessage = processedMessage + DELIMITER;
           const binaryMessage = textToBinary(fullMessage);
           
-          // Check capacity
-          // Each pixel has 4 channels (RGBA), we use RGB (3 bits per pixel)
-          const capacity = (data.length / 4) * 3;
-          if (binaryMessage.length > capacity) {
+          const capacityBits = (data.length / 4) * 3;
+          if (binaryMessage.length > capacityBits) {
              toast({ 
                variant: "destructive", 
                title: "Message too long", 
-               description: `Message requires ${binaryMessage.length} bits, but image only holds ${capacity} bits.` 
+               description: `Requires ${Math.ceil(binaryMessage.length/8)} bytes, capacity is ${Math.floor(capacityBits/8)} bytes.` 
              });
              setIsProcessing(false);
              resolve(null);
@@ -67,13 +99,8 @@ export function useSteganography() {
           let binaryIndex = 0;
           for (let i = 0; i < data.length; i += 4) {
             if (binaryIndex >= binaryMessage.length) break;
-
-            // Modify R, G, B channels
             for (let j = 0; j < 3; j++) {
               if (binaryIndex < binaryMessage.length) {
-                // Clear LSB and set to message bit
-                // data[i+j] & 0xFE clears the last bit (e.g. 101 -> 100)
-                // parseInt(...) adds the new bit (0 or 1)
                 data[i+j] = (data[i+j] & 0xFE) | parseInt(binaryMessage[binaryIndex]);
                 binaryIndex++;
               }
@@ -82,6 +109,7 @@ export function useSteganography() {
 
           ctx.putImageData(imageData, 0, 0);
           const encodedUrl = canvas.toDataURL('image/png');
+          addToHistory('encode', file.name);
           setIsProcessing(false);
           resolve(encodedUrl);
         };
@@ -89,22 +117,19 @@ export function useSteganography() {
       };
       reader.readAsDataURL(file);
     });
-  }, [toast]);
+  }, [toast, history]);
 
   // DECODE: Reveal text from image
-  const decodeMessage = useCallback(async (file: File | string): Promise<string | null> => {
+  const decodeMessage = useCallback(async (file: File | string, password?: string): Promise<string | null> => {
     setIsProcessing(true);
     return new Promise((resolve) => {
       const img = new Image();
-      // Enable CORS for external images if using URL
       img.crossOrigin = "Anonymous";
       
       img.onload = () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        
         if (!ctx) {
-          toast({ variant: "destructive", title: "Error", description: "Could not initialize canvas" });
           setIsProcessing(false);
           resolve(null);
           return;
@@ -116,53 +141,57 @@ export function useSteganography() {
 
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
-        
         let binaryMessage = "";
         
-        // Extract bits
         for (let i = 0; i < data.length; i += 4) {
-          for (let j = 0; j < 3; j++) { // R, G, B
-            const bit = data[i+j] & 1;
-            binaryMessage += bit;
+          for (let j = 0; j < 3; j++) {
+            binaryMessage += (data[i+j] & 1);
           }
         }
 
         const fullText = binaryToText(binaryMessage);
-        
         if (fullText.includes(DELIMITER)) {
-          const secret = fullText.split(DELIMITER)[0];
-          // Filter out non-printable chars just in case
+          let secret = fullText.split(DELIMITER)[0];
+          
+          if (secret.startsWith("ENC:")) {
+            if (!password) {
+              toast({ variant: "destructive", title: "Password Required", description: "This message is encrypted." });
+              setIsProcessing(false);
+              resolve(null);
+              return;
+            }
+            try {
+              const bytes = CryptoJS.AES.decrypt(secret.substring(4), password);
+              const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+              if (!decrypted) throw new Error();
+              secret = decrypted;
+            } catch (e) {
+              toast({ variant: "destructive", title: "Decryption Failed", description: "Invalid password." });
+              setIsProcessing(false);
+              resolve(null);
+              return;
+            }
+          }
+
           const cleanSecret = secret.replace(/[^\x20-\x7E\n\r\t]/g, "");
+          addToHistory('decode', typeof file === 'string' ? 'remote-image.png' : file.name);
           setIsProcessing(false);
           resolve(cleanSecret);
         } else {
-          toast({ 
-            variant: "destructive", 
-            title: "No message found", 
-            description: "Could not find a hidden message in this image." 
-          });
+          toast({ variant: "destructive", title: "No message found" });
           setIsProcessing(false);
           resolve(null);
         }
       };
       
-      img.onerror = () => {
-         toast({ variant: "destructive", title: "Error", description: "Failed to load image" });
-         setIsProcessing(false);
-         resolve(null);
-      };
-
-      if (typeof file === 'string') {
-        img.src = file;
-      } else {
+      if (typeof file === 'string') img.src = file;
+      else {
         const reader = new FileReader();
-        reader.onload = (e) => {
-          img.src = e.target?.result as string;
-        };
+        reader.onload = (e) => img.src = e.target?.result as string;
         reader.readAsDataURL(file);
       }
     });
-  }, [toast]);
+  }, [toast, history]);
 
-  return { encodeMessage, decodeMessage, isProcessing };
+  return { encodeMessage, decodeMessage, isProcessing, history, calculateCapacity };
 }

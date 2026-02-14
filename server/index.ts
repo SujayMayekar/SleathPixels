@@ -8,12 +8,13 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Serve static files from the 'dist' directory after building
-app.use(express.static(path.join(__dirname, '../dist')));
+// ✅ Serve frontend from dist/public
+const publicPath = path.join(__dirname, '../dist/public');
+app.use(express.static(publicPath));
 
-// Fallback to index.html for SPA routing
+// ✅ SPA fallback
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
+  res.sendFile(path.join(publicPath, 'index.html'));
 });
 
 app.listen(port, '0.0.0.0', () => {

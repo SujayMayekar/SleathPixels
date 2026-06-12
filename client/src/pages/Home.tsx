@@ -22,7 +22,7 @@ function Hero() {
         </div>
         
         <h1 className="text-5xl md:text-7xl font-bold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60 text-glow font-display">
-          Stegano<span className="text-primary">Safe</span>
+          Stealth<span className="text-primary">Pixels</span>
         </h1>
         
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-body">
